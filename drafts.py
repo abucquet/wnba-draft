@@ -40,13 +40,6 @@ def computeWeightedStandings(teamWinLoss: Dict[str, np.array], weights: np.array
 
 	return standings
 
-def vanillaDraftOrder(standings: List[str]):
-	"""
-	Basic draft: 
-		use the standings provided to deterministically to find the order of the draft
-	"""
-	return standings[::-1]
-
 def generateTeamPreferences(nPlayers: int, noise: int = 1) -> Dict[str, List[int]]:
 	"""
 	Generate the preferences of each team across players.
@@ -65,6 +58,14 @@ def generateTeamPreferences(nPlayers: int, noise: int = 1) -> Dict[str, List[int
 		]
 
 	return preferences
+
+def runClassicDraft(standings: List[str], nPlayers: int = 30, noise: int = 1):
+	"""
+	Classic "backwards" draft in reverse order of the standings
+	"""
+
+	draftOrder = standings[::-1]
+	# TODO
 
 def runBucketedDraft(nOffers: int, standings: List[str], nPlayers: int = 30, noise: int = 1):
 	"""
