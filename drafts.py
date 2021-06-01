@@ -54,20 +54,41 @@ def generateTeamPreferences(nPlayers: int, noise: int = 1) -> Dict[str, List[int
 			j + np.random.uniform(low=0, high=noise) for j in range(nPlayers)
 		]
 		preferences[team] = [
-			player for _, player in zip(utilities, playerList)
+			player for _, player in sorted(zip(utilities, playerList))
 		]
 
 	return preferences
 
 def runClassicDraft(standings: List[str], nPlayers: int = 30, noise: int = 1):
 	"""
-	Classic "backwards" draft in reverse order of the standings
+	Classic "backwards" draft in reverse order of the standings.
+
+	Returns a dict from team to the rank of the player they got (according to their preferences).
 	"""
 
+	# initialize the variables we will use
 	draftOrder = standings[::-1]
-	# TODO
+	draftResults = defaultdict(int) # team -> rank of player drafted
+	teamPreferences = generateTeamPreferences(nPlayers, noise)
+	teamPreferencesCopy = {team: prefs[::] for team, prefs in teamPreferences.items()}
 
-def runBucketedDraft(nOffers: int, standings: List[str], nPlayers: int = 30, noise: int = 1):
+	for team in draftOrder:
+		offer = teamPreferences[team][0]
+		
+		draftResults[team] = teamPreferencesCopy[team].index(offer) + 1
+
+		# remove that player from all other team preferences
+		[teamPreferences[team].remove(offer) for team in WNBA_TEAMS]
+
+	return draftResults
+
+def runBucketedDraft(
+	nOffers: int,
+	standings: List[str],
+	teamRecords: Dict[str, np.array],
+	nPlayers: int = 30,
+	noise: int = 1
+	):
 	"""
 	Run the bucketed draft system.
 
@@ -93,9 +114,13 @@ def runBucketedDraft(nOffers: int, standings: List[str], nPlayers: int = 30, noi
 
 		# each player accepts their best offer
 		for player, options in playerOptions.items():
-			chosenTeam = options[0] # TODO pick a team in a better way
+			# each team has probability of getting picked proportinal to their #wins.
+			teamWeights = np.array([teamRecords[team] for team in options])
+			teamWeights = teamWeights / np.sum(teamWeights)
+			
+			chosenTeam = options[np.random.choice(len(teamWeights), p=teamWeights)]
 
-			draftResults[chosenTeam] = teamPreferencesCopy[chosenTeam].index(player)
+			draftResults[chosenTeam] = teamPreferencesCopy[chosenTeam].index(player) + 1
 			standings.remove(chosenTeam)
 			
 			# remove that player from all other team preferences
