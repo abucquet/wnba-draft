@@ -9,7 +9,8 @@ NUM_OUT_CONFERENCE_GAMES = 3
 NUM_GAMES_PER_TEAM = NUM_IN_CONFERENCE_GAMES*5+NUM_OUT_CONFERENCE_GAMES*6
 
 WNBA_TEAMS = [
-    "Dream","Sky","Sun","Fever","Mystics","Wings","Aces","Sparks","Lynx","Mercury","Storm"
+    "Dream","Sky","Sun","Fever","Liberty","Mystics",
+    "Wings","Aces","Sparks","Lynx","Mercury","Storm"
 ]
 east = ["Dream","Sky","Sun","Fever","Liberty","Mystics"]
 west = ["Wings","Aces","Sparks","Lynx","Mercury","Storm"]
@@ -28,7 +29,7 @@ elo = {
     "Storm":1630
     }
 
-tankCoef = 0.9
+tankCoef = 0.5
 
 def simulateMatch(teamA, teamB, tankA, tankB, teamRecords, gamesPlayed, teamWinLoss):
     #Given teams A and B and whether or not each is tanking, choose a winner from the 2:
@@ -70,7 +71,7 @@ def createGames():
 
     return pairings
 
-def simulateSeason(games, tankingTeams=[],tankingStart=NUM_GAMES_PER_TEAM+1):
+def simulateSeason(tankingTeams=[],tankingStart=NUM_GAMES_PER_TEAM+1):
     teamRecords = defaultdict(int) # map teams to wins
     gamesPlayed = defaultdict(int) # map teams to games played
     teamWinLoss = defaultdict(list) # map teams to win loss outcomes (list of 0s and 1s)

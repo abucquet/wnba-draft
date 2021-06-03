@@ -115,7 +115,7 @@ def runBucketedDraft(
 		# each player accepts their best offer
 		for player, options in playerOptions.items():
 			# each team has probability of getting picked proportinal to their #wins.
-			teamWeights = np.array([teamRecords[team] for team in options])
+			teamWeights = np.array([teamRecords[team] + .1 for team in options])
 			teamWeights = teamWeights / np.sum(teamWeights)
 			
 			chosenTeam = options[np.random.choice(len(teamWeights), p=teamWeights)]

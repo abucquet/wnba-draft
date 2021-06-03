@@ -7,9 +7,10 @@ from collections import defaultdict
 from typing import List, Dict
 import itertools as it
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from simulation import (
-	WNBA_TEAMS, simulateSeason, createGames
+	WNBA_TEAMS, NUM_GAMES_PER_TEAM, simulateSeason, createGames, elo
 	)
 from drafts import (
 	computeStandings, computeWeightedStandings, runClassicDraft, runBucketedDraft
@@ -54,39 +55,84 @@ def full_simulation_with_tanking():
 	B = 100
 
 	# vanilla draft
-	positionVSPreference = {team: [] for team in WNBA_TEAMS for i in range(39)}
+	draftPreference = {team: [] for team in WNBA_TEAMS for i in range(1, NUM_GAMES_PER_TEAM + 2)}
+	standingResults = {team: [] for team in WNBA_TEAMS for i in range(1, NUM_GAMES_PER_TEAM + 2)}
 
-	for tankingTeam in WNBA_TEAMS:
-		for tankingStart in range(0, 38 + 1):
+	for tankingTeam in tqdm(WNBA_TEAMS):
+		for tankingStart in range(1, NUM_GAMES_PER_TEAM + 2):
+			average_choice = 0
+			average_standing = 0
 			for _ in range(B):
 				teamRecords, gamesPlayed, teamWinLoss = simulateSeason([tankingTeam], tankingStart)
 
 				standings = computeStandings(teamRecords)
+				average_standing += standings.index(tankingTeam)
 
 				draftResults = runClassicDraft(standings, noise=5)
+				average_choice += draftResults[tankingTeam]
 
-				# compiling results: keep track standings vs draft pick
-				for team in standings:
-					positionVSPreference[tankingTeam].append(draftResults[tankingTeam])
+			# compiling results: keep track standings vs draft pick
+			draftPreference[tankingTeam].append(average_choice/B)
+			standingResults[tankingTeam].append(average_standing/B)
 
-	print({team: np.mean(pos) for team, pos in positionVSPreference.items()})
+	for team in WNBA_TEAMS:
+		plt.figure()
+		plt.plot(
+			list(range(1, NUM_GAMES_PER_TEAM + 2)), standingResults[team],
+			color="red",
+			label="Average Standing"
+			)
+		plt.plot(
+			list(range(1, NUM_GAMES_PER_TEAM + 2)), draftPreference[team],
+			color="blue",
+			label="Average Player Choice"
+			)
+		plt.ylabel("Average Position")
+		plt.xlabel("Tanking Starting at Game")
+		plt.title(f"Tanking Strategy for {team} (elo={elo[team]})")
+		plt.legend()
+		plt.savefig("plots/" + team + "_regular" + ".png")
+		plt.close()
 
-	return
 
 	# bucketed draft
-	positionVSPreference = {team: [] for team in WNBA_TEAMS}
-	
-	for _ in range(B):
-		teamRecords, gamesPlayed, teamWinLoss = simulateSeason()
+	draftPreference = {team: [] for team in WNBA_TEAMS for i in range(1, NUM_GAMES_PER_TEAM + 2)}
+	standingResults = {team: [] for team in WNBA_TEAMS for i in range(1, NUM_GAMES_PER_TEAM + 2)}
 
-		standings = computeStandings(teamRecords)
+	for tankingTeam in tqdm(WNBA_TEAMS):
+		for tankingStart in range(0, NUM_GAMES_PER_TEAM + 1):
+			average_choice = 0
+			average_standing = 0
+			for _ in range(B):
+				teamRecords, gamesPlayed, teamWinLoss = simulateSeason([tankingTeam], tankingStart)
 
-		draftResults = runBucketedDraft(4, standings[::], teamRecords, noise=5)
+				standings = computeStandings(teamRecords)
+				average_standing += standings.index(tankingTeam)
 
-		# compiling results: keep track standings vs draft pick
-		for team in standings:
-			positionVSPreference[team].append(draftResults[team])
+				draftResults = runBucketedDraft(4, standings[::], teamRecords, noise=5)
+				average_choice += draftResults[tankingTeam]
 
-	print({team: np.mean(pos) for team, pos in positionVSPreference.items()})
+			# compiling results: keep track standings vs draft pick
+			draftPreference[tankingTeam].append(average_choice/B)
+			standingResults[tankingTeam].append(average_standing/B)
 
-full_simulation_no_tanking()
+	for team in WNBA_TEAMS:
+		plt.figure()
+		plt.plot(
+			list(range(1, NUM_GAMES_PER_TEAM + 2)), standingResults[team],
+			color="red",
+			label="Average Standing"
+			)
+		plt.plot(
+			list(range(1, NUM_GAMES_PER_TEAM + 2)), draftPreference[team],
+			color="blue",
+			label="Average Player Choice"
+			)
+		plt.ylabel("Average Position")
+		plt.xlabel("Tanking Starting at Game")
+		plt.title(f"Tanking Strategy for {team} (elo={elo[team]})")
+		plt.legend()
+		plt.savefig("plots/" + team + "_bucketed" + ".png")
+		plt.close()
+
+full_simulation_with_tanking()
