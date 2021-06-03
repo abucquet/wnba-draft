@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 NUM_IN_CONFERENCE_GAMES = 4
 NUM_OUT_CONFERENCE_GAMES = 3
+NUM_GAMES_PER_TEAM = NUM_IN_CONFERENCE_GAMES*5+NUM_OUT_CONFERENCE_GAMES*6
 
 WNBA_TEAMS = [
     "Dream","Sky","Sun","Fever","Mystics","Wings","Aces","Sparks","Lynx","Mercury","Storm"
@@ -51,6 +52,7 @@ def simulateMatch(teamA, teamB, tankA, tankB, teamRecords, gamesPlayed, teamWinL
 
     return teamRecords, gamesPlayed, teamWinLoss
 
+#FIX SHOULD BE 38 GAMES PER TEAM
 def createGames():
     pairings = []
     for eastInd in range(len(east)):
@@ -68,33 +70,39 @@ def createGames():
 
     return pairings
 
-def simulateSeason(games, tankingTeams):
+def simulateSeason(games, tankingTeams=[],tankingStart=NUM_GAMES_PER_TEAM+1):
     teamRecords = defaultdict(int) # map teams to wins
     gamesPlayed = defaultdict(int) # map teams to games played
     teamWinLoss = defaultdict(list) # map teams to win loss outcomes (list of 0s and 1s)
 
+    games = createGames()
     for game in games:
+        A = game[0]
+        B = game[1]
         tankA = False
         tankB = False
-        # What other tanking condition should we add here? Doesn't really make sense to tank right out the gate?
-        if game[0] in tankingTeams:
+        # If record below certain threshold and percentage of games played below certain threshold
+        if A in tankingTeams and gamesPlayed[A] >= tankingStart:
             tankA = True
-        if game[1] in tankingTeams:
-            tankB = False
+        if B in tankingTeams and gamesPlayed[A] >= tankingStart:
+            tankB = True
         teamRecords, gamesPlayed, teamWinLoss = simulateMatch(
-            game[0], game[1], tankA, tankB,
+            A, B, tankA, tankB,
             teamRecords, gamesPlayed, teamWinLoss
             )
 
     return teamRecords, gamesPlayed, teamWinLoss
 
+def simulateTanking():
+    teamTankResults = defaultdict(list) #list of length range(38) of team's record
+    teamTankGamesPlayed = defaultdict(list)
+    teamTankWinLoss = defaultdict(list)
+    for team in WNBA_TEAMS:
+        for tankStart in range(NUM_GAMES_PER_TEAM+1):
+            records, played, winLoss = simulateSeason(games,[team],tankStart)
+            teamTankResults[team].append(records[team])
+            teamTankGamesPlayed[team].append(played[team])
+            teamTankWinLoss[team].append(winLoss[team])
+    return teamTankResults, teamTankGamesPlayed, teamTankWinLoss
 
-def simulationFull(n=5):
-    games = createGames()
-    noTankRecord, noTankGamesPlayed, noTankWinLoss = simulateSeason(games,[])
-    for i in range(n+1):
-        tankingTeamCombos = it.combinations(WNBA_TEAMS,i)
-        for combo in tankingTeamCombos:
-            teamRecords, gamesPlayed, teamWinLoss = simulateSeason(games, combo)
 # simulateSeason()
-simulationFull(3)
