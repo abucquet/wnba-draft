@@ -1,5 +1,8 @@
 import numpy as np
 from collections import defaultdict
+import itertools as it
+import matplotlib.pyplot as plt
+
 
 NUM_IN_CONFERENCE_GAMES = 4
 NUM_OUT_CONFERENCE_GAMES = 3
@@ -65,18 +68,33 @@ def createGames():
 
     return pairings
 
-def simulateSeason():
+def simulateSeason(games, tankingTeams):
     teamRecords = defaultdict(int) # map teams to wins
     gamesPlayed = defaultdict(int) # map teams to games played
     teamWinLoss = defaultdict(list) # map teams to win loss outcomes (list of 0s and 1s)
 
-    games = createGames()
     for game in games:
+        tankA = False
+        tankB = False
+        # What other tanking condition should we add here? Doesn't really make sense to tank right out the gate?
+        if game[0] in tankingTeams:
+            tankA = True
+        if game[1] in tankingTeams:
+            tankB = False
         teamRecords, gamesPlayed, teamWinLoss = simulateMatch(
-            game[0], game[1], False, False,
+            game[0], game[1], tankA, tankB,
             teamRecords, gamesPlayed, teamWinLoss
             )
 
     return teamRecords, gamesPlayed, teamWinLoss
-    
+
+
+def simulationFull(n=5):
+    games = createGames()
+    noTankRecord, noTankGamesPlayed, noTankWinLoss = simulateSeason(games,[])
+    for i in range(n+1):
+        tankingTeamCombos = it.combinations(WNBA_TEAMS,i)
+        for combo in tankingTeamCombos:
+            teamRecords, gamesPlayed, teamWinLoss = simulateSeason(games, combo)
 # simulateSeason()
+simulationFull(3)
