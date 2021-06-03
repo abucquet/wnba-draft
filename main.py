@@ -52,7 +52,7 @@ def full_simulation_no_tanking():
 	print([np.mean(pos) for pos in positionVSPreference])
 
 def full_simulation_with_tanking():
-	B = 100
+	B = 1000
 
 	# vanilla draft
 	draftPreference = {team: [] for team in WNBA_TEAMS for i in range(1, NUM_GAMES_PER_TEAM + 2)}
